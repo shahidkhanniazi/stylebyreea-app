@@ -45,10 +45,6 @@ class SBR {
         contentTextStyle: GoogleFonts.jost(color: Colors.white, fontSize: 14),
         actionTextColor: gold2,
       ),
-      pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      }),
     );
   }
 }
