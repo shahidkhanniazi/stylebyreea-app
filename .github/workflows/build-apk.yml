@@ -1,0 +1,40 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Create platform folders
+        run: flutter create --org com.stylebyreea --project-name stylebyreea --platforms android,ios .
+      - name: Patch Android manifest
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q "android.permission.INTERNET" $M || perl -0pi -e 's#(<manifest[^>]*>)#$1\n    <uses-permission android:name="android.permission.INTERNET"/>#' $M
+          perl -0pi -e 's#android:label="[^"]*"#android:label="Style By Reea"#' $M
+          grep -q "<queries>" $M || perl -0pi -e 's#</manifest>\s*$#    <queries>\n        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>\n        <intent><action android:name="android.intent.action.SENDTO" /><data android:scheme="mailto" /></intent>\n    </queries>\n</manifest>\n#' $M
+          cat $M
+      - run: flutter pub get
+      - name: App icons
+        run: dart run flutter_launcher_icons
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+      - name: Build APK
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StyleByReea-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
